@@ -20,8 +20,9 @@ class ExprManager():
         
         if varied is not None:
             self.varied = varied
-        if config is not None:
-            self.config = config
+        
+        self.config = config or dict() # if None, empty dict    
+        config['expr_name'] = expr_name
         
     def save_varied_params(self):
         for param_name, param_values in self.varied.items():
