@@ -60,10 +60,26 @@ class ExprManager():
         return utils.copy_nested_dict(full_dict,
                             allow_only=allow_only, replace_value='(dropped)')
         
+    def set_filename(self, idx, prefix='sol', subdir=False):
+        if subdir:
+            prefix = prefix + '/' + prefix
+        return utils._set_filename(idx, prefix=prefix, extension='')
+        
+    def save_result(self, obj, filename, return_path=False):
+        ''' save to a BSDF file. '''
+        filename = utils.ensure_extension(filename, ext='.bsdf')
+        res_path = os.path.join(self.res_dir, filename) # full path to file
+        # if `filename` includes subdirectories like 'sub/dir/file', make them
+        os.makedirs(os.path.dirname(res_path), exist_ok=True)
+        utils.save_bsdf(res_path, obj)
+        if return_path:
+            return res_path
+        
     def load_result(self, filename):
         ''' load and return previous result if available as a file;
         if the file does not exist, return None.
         '''
+        filename = utils.ensure_extension(filename, ext='.bsdf')
         res_path = os.path.join(self.res_dir, filename) # full path to file
         try:
             return utils.load_bsdf(res_path) # previous result
@@ -75,13 +91,41 @@ class ExprManager():
         in this case a model or a solver,
         that stores parameter values as attributes.
         '''
-        print('export')
-        out_dict = self.treat_dict_before_export(obj.__dict__)
-        out_dict['type'] = type(obj).__name__ # make a string
+        return export_dict(obj.__dict__)
         
-        res_path = os.path.join(self.res_dir, filename) # full path to file
-        utils.save_bsdf(res_path, out_dict)
+    def export_dict(self, obj, filename):
+        ''' export a copy of the dictionary object to a file.
+        obj: dict (output data)
+        filename: string (path to output file to be generated)
+        '''
+        out_dict = self.treat_dict_before_export(obj)
+        out_dict['type'] = type(obj).__name__ # make a string
+        self.save_result(out_dict, filename)
         return out_dict
+        
+    def call_with_file(self, solver, data=None, idx=None,
+                    solver_kwargs=None, save_output=True,
+                    prefix='sol', subdir=False,
+                    force_recalculate=False, verbose=True):
+        filename = self.set_filename(idx, prefix=prefix, subdir=subdir)
+        # check for previously saved file
+        if not force_recalculate:
+            sol = self.load_result(filename)
+            if sol is not None:
+                if verbose:
+                    print(' - {}: loaded from file'.format(filename))
+                return sol
+        if solver is None:
+            raise FileNotFoundError('{}: check filename or generate.'.format(filename))
+                
+        # do the computation and save results to file
+        if verbose:
+            print(' - {}: running...'.format(filename))
+        solver_kwargs = solver_kwargs or self.config.get('solver', dict())
+        sol = solver(*data, **solver_kwargs)
+        if save_output:
+            _ = self.export_dict(sol, filename) # write to a BDSF file
+        return sol
         
     def load_from_export(self, filename):
         # TODO: load previous exports, to create a new copy of object

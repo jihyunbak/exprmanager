@@ -125,3 +125,10 @@ def _set_filename(idx, keys='', prefix='result', extension='.bsdf', separator='_
         filename += separator + _key(i) + '{}'.format(id)
     filename += extension
     return filename
+    
+def ensure_extension(filename, ext='.bsdf'):
+    if (not isinstance(filename, str)) or (not isinstance(ext, str)):
+        raise ValueError('filename and extensions should be strings')
+    if not (filename[-len(ext):] == ext):
+        filename += ext
+    return filename
