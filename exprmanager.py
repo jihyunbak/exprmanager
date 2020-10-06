@@ -14,15 +14,16 @@ class ExprManager():
     def __init__(self, base_dir='', expr_name='test', 
                  varied=None, config=None):
         # set up expr_subdir
+        self.expr_name = expr_name
         self.expr_dir = os.path.join(base_dir, expr_name + '/')
         self.res_dir = os.path.join(self.expr_dir, 'res/')
-        os.makedirs(self.res_dir, exist_ok=True) # recursive mkdir
+        # os.makedirs(self.res_dir, exist_ok=True) # recursive mkdir
         
         if varied is not None:
             self.varied = varied
         
         self.config = config or dict() # if None, empty dict    
-        config['expr_name'] = expr_name
+        self.config['expr_name'] = expr_name
         
     def save_varied_params(self):
         for param_name, param_values in self.varied.items():
