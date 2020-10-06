@@ -4,7 +4,7 @@ import os
 import numpy as np
 import itertools
 
-from . import utils
+from exprmanager import utils
 
 class ExprManager():
     ''' manage the logistics between the main program
